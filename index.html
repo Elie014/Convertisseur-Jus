@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Convertisseur Jus Concentré / Pur Jus</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        input, select { margin: 8px; padding: 5px; }
+        label { display: block; margin-top: 10px; }
+        button { margin-top: 15px; }
+        .info { margin-top: 20px; padding: 10px; border: 1px solid #ccc; background: #f9f9f9; }
+    </style>
+</head>
+<body>
+    <h2>Convertisseur Jus Concentré ↔ Pur Jus</h2>
+    <form id="conversionForm">
+        <label>Direction de conversion:
+            <select id="direction" onchange="updateLabels()">
+                <option value="to_pur">Concentré → Pur Jus</option>
+                <option value="to_conc">Pur Jus → Concentré</option>
+            </select>
+        </label>
+
+        <label for="brix_conc">Brix du concentré (°Bx):</label>
+        <input type="number" id="brix_conc" value="65" step="0.1">
+
+        <label for="brix_pur">Brix du pur jus (°Bx):</label>
+        <input type="number" id="brix_pur" value="15.9" step="0.1">
+
+        <label for="densite">Masse volumique (kg/L):</label>
+        <input type="number" id="densite" value="1.3249" step="0.0001">
+
+        <label for="valeur" id="valeurLabel">Valeur à convertir (tonnes):</label>
+        <input type="number" id="valeur" value="7338.5" step="0.01">
+
+        <button type="button" onclick="convertir()">Convertir</button>
+    </form>
+
+    <div class="info">
+        <h3>Résultat :</h3>
+        <p id="resultat"></p>
+        <h4>Données utilisées :</h4>
+        <ul>
+            <li id="infoBrix"></li>
+            <li id="infoDensite"></li>
+            <li id="infoCoeff"></li>
+            <li id="infoValeur"></li>
+        </ul>
+        <h4>Détails de conversion :</h4>
+        <ul>
+            <li id="detailConcentre"></li>
+            <li id="detailPurJus"></li>
+        </ul>
+    </div>
+
+    <script>
+        function updateLabels() {
+            const direction = document.getElementById("direction").value;
+            const label = document.getElementById("valeurLabel");
+            if (direction === "to_pur") {
+                label.innerText = "Valeur à convertir (tonnes de concentré):";
+            } else {
+                label.innerText = "Valeur à convertir (hectolitres de pur jus):";
+            }
+        }
+
+        function convertir() {
+            const direction = document.getElementById("direction").value;
+            const brixConc = parseFloat(document.getElementById("brix_conc").value);
+            const brixPur = parseFloat(document.getElementById("brix_pur").value);
+            const densite = parseFloat(document.getElementById("densite").value);
+            const valeur = parseFloat(document.getElementById("valeur").value);
+
+            const coeff = brixConc / brixPur;
+            let resultat = "";
+            let masseConcentre = 0;
+            let volumeConcentre = 0;
+            let volumePurJus = 0;
+
+            if (direction === "to_pur") {
+                volumePurJus = valeur * coeff * 10; // tonnes → hL
+                resultat = `Il faut fournir ${volumePurJus.toFixed(2)} hL de pur jus.`;
+                masseConcentre = valeur;
+                volumeConcentre = valeur * 1000 / densite; // en L
+                volumeConcentre = volumeConcentre / 100; // en hL
+            } else {
+                volumeConcentre = (valeur / coeff)/densite; // hL
+                masseConcentre = (valeur/coeff) / 10; // t
+                resultat = `Cela correspond à ${masseConcentre.toFixed(2)} tonnes de concentré (≈ ${volumeConcentre.toFixed(2)} hL).`;
+                volumePurJus = valeur;
+            }
+
+            document.getElementById("resultat").innerText = resultat;
+            document.getElementById("infoBrix").innerText = `Brix concentré : ${brixConc} °Bx, Brix pur jus : ${brixPur} °Bx`;
+            document.getElementById("infoDensite").innerText = `Masse volumique : ${densite} kg/L`;
+            document.getElementById("infoCoeff").innerText = `Coefficient de concentration : ${coeff.toFixed(4)}`;
+            document.getElementById("infoValeur").innerText = `Valeur saisie : ${valeur}`;
+
+            document.getElementById("detailConcentre").innerText = `Jus concentré : ${masseConcentre.toFixed(2)} tonnes ≈ ${volumeConcentre.toFixed(2)} hL`;
+            document.getElementById("detailPurJus").innerText = `Pur jus : ${volumePurJus.toFixed(2)} hL`;
+        }
+
+        // Initialisation
+        updateLabels();
+    </script>
+</body>
+</html>
