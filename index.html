@@ -133,8 +133,9 @@ function updateMethod() {
 
 // Formule empirique densité en fonction du Brix
 function densiteFromBrix(brix) {
-  return 0.998860 + 0.003859 * brix + 0.00001377 * Math.pow(brix, 2) + 0.0000000371 * Math.pow(brix, 3);
+    return 0.998860 + 0.003859 * brix + 0.00001377 * Math.pow(brix, 2) + 0.0000000371 * Math.pow(brix, 3);
 }
+
 
 function convertir() {
   const direction = document.getElementById("direction").value;
