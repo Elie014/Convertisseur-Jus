@@ -1,176 +1,192 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Convertisseur Jus Concentré / Pur Jus</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #f2f2f2;
-        }
-
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        h2 {
-            text-align: center;
-        }
-
-        label {
-            display: block;
-            margin-top: 12px;
-            font-weight: bold;
-        }
-
-        input, select, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            font-size: 1em;
-            box-sizing: border-box;
-        }
-
-        button {
-            margin-top: 20px;
-            background-color: #4285f4;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #357ae8;
-        }
-
-        .info {
-            margin-top: 25px;
-            padding: 15px;
-            background: #f9f9f9;
-            border-left: 4px solid #4285f4;
-        }
-
-        .info h3, .info h4 {
-            margin-top: 10px;
-        }
-
-        ul {
-            padding-left: 18px;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Convertisseur Jus Concentré / Pur Jus</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f2f2f2;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2 { text-align: center; }
+    label {
+      display: block;
+      margin-top: 12px;
+      font-weight: bold;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      font-size: 1em;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 20px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #357ae8;
+    }
+    .info {
+      margin-top: 25px;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #4285f4;
+    }
+    .info h3, .info h4 { margin-top: 10px; }
+    ul { padding-left: 18px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Convertisseur Jus Concentré ↔ Pur Jus</h2>
-        <form id="conversionForm">
-            <label>Direction de conversion:
-                <select id="direction" onchange="updateLabels()">
-                    <option value="to_pur">Concentré → Pur Jus</option>
-                    <option value="to_conc">Pur Jus → Concentré</option>
-                </select>
-            </label>
+<div class="container">
+  <h2>Convertisseur Jus Concentré ↔ Pur Jus</h2>
+  <form id="conversionForm">
+    <label>Direction de conversion:
+      <select id="direction" onchange="updateLabels()">
+        <option value="to_pur">Concentré → Pur Jus</option>
+        <option value="to_conc">Pur Jus → Concentré</option>
+      </select>
+    </label>
 
-            <label for="brix_conc">Brix du concentré (°Bx):</label>
-            <input type="number" id="brix_conc" value="65" step="0.1">
+    <label for="method">Méthode de calcul du coefficient :</label>
+    <select id="method" onchange="updateMethod()">
+      <option value="brix">Via Brix pur jus</option>
+      <option value="manual">Via coefficient manuel</option>
+    </select>
 
-            <label for="brix_pur">Brix du pur jus (°Bx):</label>
-            <input type="number" id="brix_pur" value="15.9" step="0.1">
+    <label for="brix_conc">Brix du concentré (°Bx):</label>
+    <input type="number" id="brix_conc" value="65" step="0.1"/>
 
-            <label for="valeur" id="valeurLabel">Valeur à convertir (tonnes):</label>
-            <input type="number" id="valeur" value="7338.5" step="0.01">
-
-            <button type="button" onclick="convertir()">Convertir</button>
-        </form>
-
-        <div class="info">
-            <h3>Résultat :</h3>
-            <p id="resultat"></p>
-            <h4>Données utilisées :</h4>
-            <ul>
-                <li id="infoBrix"></li>
-                <li id="infoDensite"></li>
-                <li id="infoCoeff"></li>
-                <li id="infoValeur"></li>
-            </ul>
-            <h4>Détails de conversion :</h4>
-            <ul>
-                <li id="detailConcentre"></li>
-                <li id="detailPurJus"></li>
-            </ul>
-        </div>
+    <div id="brixField">
+      <label for="brix_pur">Brix du pur jus (°Bx):</label>
+      <input type="number" id="brix_pur" value="15.9" step="0.1"/>
     </div>
 
-    <script>
-        function formatNumber(value, decimals = 2) {
-            return value.toLocaleString('fr-FR', {
-                minimumFractionDigits: decimals,
-                maximumFractionDigits: decimals
-            });
-        }
+    <div id="coeffField" style="display:none;">
+      <label for="coeff_manuel">Coefficient de concentration :</label>
+      <input type="number" id="coeff_manuel" value="4.088" step="0.001"/>
+    </div>
 
-        function updateLabels() {
-            const direction = document.getElementById("direction").value;
-            const label = document.getElementById("valeurLabel");
-            if (direction === "to_pur") {
-                label.innerText = "Valeur à convertir (tonnes de concentré):";
-            } else {
-                label.innerText = "Valeur à convertir (hectolitres de pur jus):";
-            }
-        }
+    <label for="valeur" id="valeurLabel">Valeur à convertir (tonnes):</label>
+    <input type="number" id="valeur" value="7338.5" step="0.01"/>
 
-        // Formule empirique de densité en fonction du Brix
-        function densiteFromBrix(brix) {
-            return 0.998860 + 0.003859 * brix + 0.00001377 * Math.pow(brix, 2) + 0.0000000371 * Math.pow(brix, 3);
-        }
+    <button type="button" onclick="convertir()">Convertir</button>
+  </form>
 
+  <div class="info">
+    <h3>Résultat :</h3>
+    <p id="resultat"></p>
+    <h4>Données utilisées :</h4>
+    <ul>
+      <li id="infoBrix"></li>
+      <li id="infoDensite"></li>
+      <li id="infoCoeff"></li>
+      <li id="infoValeur"></li>
+    </ul>
+    <h4>Détails de conversion :</h4>
+    <ul>
+      <li id="detailConcentre"></li>
+      <li id="detailPurJus"></li>
+    </ul>
+  </div>
+</div>
 
+<script>
+function formatNumber(value, decimals = 2) {
+  return value.toLocaleString('fr-FR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+}
 
-        function convertir() {
-            const direction = document.getElementById("direction").value;
-            const brixConc = parseFloat(document.getElementById("brix_conc").value);
-            const brixPur = parseFloat(document.getElementById("brix_pur").value);
-            const valeur = parseFloat(document.getElementById("valeur").value);
+function updateLabels() {
+  const direction = document.getElementById("direction").value;
+  const label = document.getElementById("valeurLabel");
+  if (direction === "to_pur") {
+    label.innerText = "Valeur à convertir (tonnes de concentré):";
+  } else {
+    label.innerText = "Valeur à convertir (hectolitres de pur jus):";
+  }
+}
 
-            const densite = densiteFromBrix(brixConc); // calcul automatique
-            const coeff = brixConc / brixPur;
+function updateMethod() {
+  const method = document.getElementById("method").value;
+  document.getElementById("brixField").style.display = method === "brix" ? "block" : "none";
+  document.getElementById("coeffField").style.display = method === "manual" ? "block" : "none";
+}
 
-            let resultat = "";
-            let masseConcentre = 0;
-            let volumeConcentre = 0;
-            let volumePurJus = 0;
+// Formule empirique densité en fonction du Brix
+function densiteFromBrix(brix) {
+  return 0.998860 + 0.003859 * brix + 0.00001377 * Math.pow(brix, 2) + 0.0000000371 * Math.pow(brix, 3);
+}
 
-            if (direction === "to_pur") {
-                volumePurJus = valeur * coeff * 10;
-                resultat = `Il faut fournir ${formatNumber(volumePurJus)} hL de pur jus.`;
-                masseConcentre = valeur;
-                volumeConcentre = valeur * 1000 / densite / 100;
-            } else {
-                volumeConcentre = (valeur / coeff) / densite;
-                masseConcentre = (valeur / coeff) / 10;
-                resultat = `Cela correspond à ${formatNumber(masseConcentre)} tonnes de concentré (≈ ${formatNumber(volumeConcentre)} hL).`;
-                volumePurJus = valeur;
-            }
+function convertir() {
+  const direction = document.getElementById("direction").value;
+  const method = document.getElementById("method").value;
 
-            document.getElementById("resultat").innerText = resultat;
-            document.getElementById("infoBrix").innerText = `Brix concentré : ${formatNumber(brixConc, 1)} °Bx, Brix pur jus : ${formatNumber(brixPur, 1)} °Bx`;
-            document.getElementById("infoDensite").innerText = `Masse volumique (calculée) : ${formatNumber(densite, 4)} kg/L`;
-            document.getElementById("infoCoeff").innerText = `Coefficient de concentration : ${formatNumber(coeff, 4)}`;
-            document.getElementById("infoValeur").innerText = `Valeur saisie : ${formatNumber(valeur)}`;
+  const brixConc = parseFloat(document.getElementById("brix_conc").value);
+  const valeur = parseFloat(document.getElementById("valeur").value);
 
-            document.getElementById("detailConcentre").innerText = `Jus concentré : ${formatNumber(masseConcentre)} tonnes ≈ ${formatNumber(volumeConcentre)} hL`;
-            document.getElementById("detailPurJus").innerText = `Pur jus : ${formatNumber(volumePurJus)} hL`;
-        }
+  const densite = densiteFromBrix(brixConc);
 
-        updateLabels();
-    </script>
+  let coeff = 1;
+  let brixPur = null;
+
+  if (method === "brix") {
+    brixPur = parseFloat(document.getElementById("brix_pur").value);
+    coeff = brixConc / brixPur;
+  } else {
+    coeff = parseFloat(document.getElementById("coeff_manuel").value);
+  }
+
+  let resultat = "";
+  let masseConcentre = 0;
+  let volumeConcentre = 0;
+  let volumePurJus = 0;
+
+  if (direction === "to_pur") {
+    volumePurJus = valeur * coeff * 10;
+    resultat = `Il faut fournir ${formatNumber(volumePurJus)} hL de pur jus.`;
+    masseConcentre = valeur;
+    volumeConcentre = valeur * 1000 / densite / 100;
+  } else {
+    volumeConcentre = (valeur / coeff) / densite;
+    masseConcentre = (valeur / coeff) / 10;
+    resultat = `Cela correspond à ${formatNumber(masseConcentre)} tonnes de concentré (≈ ${formatNumber(volumeConcentre)} hL).`;
+    volumePurJus = valeur;
+  }
+
+  const brixText = method === "brix"
+    ? `Brix concentré : ${formatNumber(brixConc, 1)} °Bx, Brix pur jus : ${formatNumber(brixPur, 1)} °Bx`
+    : `Brix concentré : ${formatNumber(brixConc, 1)} °Bx`;
+
+  document.getElementById("resultat").innerText = resultat;
+  document.getElementById("infoBrix").innerText = brixText;
+  document.getElementById("infoDensite").innerText = `Masse volumique (calculée) : ${formatNumber(densite, 4)} kg/L`;
+  document.getElementById("infoCoeff").innerText = `Coefficient de concentration : ${formatNumber(coeff, 4)}`;
+  document.getElementById("infoValeur").innerText = `Valeur saisie : ${formatNumber(valeur)}`;
+
+  document.getElementById("detailConcentre").innerText = `Jus concentré : ${formatNumber(masseConcentre)} tonnes ≈ ${formatNumber(volumeConcentre)} hL`;
+  document.getElementById("detailPurJus").innerText = `Pur jus : ${formatNumber(volumePurJus)} hL`;
+}
+
+updateLabels();
+</script>
 </body>
 </html>
