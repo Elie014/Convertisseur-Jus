@@ -131,11 +131,10 @@ function updateMethod() {
   document.getElementById("coeffField").style.display = method === "manual" ? "block" : "none";
 }
 
-// Formule empirique densité en fonction du Brix
+// Formule validée : densité en kg/L à partir du Brix
 function densiteFromBrix(brix) {
-    return 0.998860 + 0.003859 * brix + 0.00001377 * Math.pow(brix, 2) + 0.0000000371 * Math.pow(brix, 3);
+  return 145 / (145 - 0.55 * brix);
 }
-
 
 function convertir() {
   const direction = document.getElementById("direction").value;
@@ -144,7 +143,8 @@ function convertir() {
   const brixConc = parseFloat(document.getElementById("brix_conc").value);
   const valeur = parseFloat(document.getElementById("valeur").value);
 
-  const densite = densiteFromBrix(brixConc);
+  const densite = densiteFromBrix(brixConc);       // kg/L
+  const masseVolumique = densite / 1.0018;                // sans unité
 
   let coeff = 1;
   let brixPur = null;
@@ -165,9 +165,9 @@ function convertir() {
     volumePurJus = valeur * coeff * 10;
     resultat = `Il faut fournir ${formatNumber(volumePurJus)} hL de pur jus.`;
     masseConcentre = valeur;
-    volumeConcentre = valeur * 1000 / densite / 100;
+    volumeConcentre = valeur * 1000 / masseVolumique / 100;
   } else {
-    volumeConcentre = (valeur / coeff) / densite;
+    volumeConcentre = (valeur / coeff) / masseVolumique;
     masseConcentre = (valeur / coeff) / 10;
     resultat = `Cela correspond à ${formatNumber(masseConcentre)} tonnes de concentré (≈ ${formatNumber(volumeConcentre)} hL).`;
     volumePurJus = valeur;
@@ -179,7 +179,8 @@ function convertir() {
 
   document.getElementById("resultat").innerText = resultat;
   document.getElementById("infoBrix").innerText = brixText;
-  document.getElementById("infoDensite").innerText = `Masse volumique (calculée) : ${formatNumber(densite, 4)} kg/L`;
+  document.getElementById("infoDensite").innerText =
+    `Masse volumique : ${formatNumber(masseVolumique, 4)} kg/L (→ Densité : ${formatNumber(densite, 4)})`;
   document.getElementById("infoCoeff").innerText = `Coefficient de concentration : ${formatNumber(coeff, 4)}`;
   document.getElementById("infoValeur").innerText = `Valeur saisie : ${formatNumber(valeur)}`;
 
