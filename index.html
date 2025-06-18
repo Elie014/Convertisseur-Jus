@@ -129,10 +129,15 @@
 
         // Formule empirique de densité en fonction du Brix
         function densiteFromBrix(brix) {
-            const numerator = 4 * 145;
-            const denominator = 0.55 * brix;
-            const sqrtPart = Math.sqrt(1 + numerator / denominator);
-            return (1 + sqrtPart) / 2;
+            if (brix <= 0) return 0; // protection contre division par 0
+        
+            const a = 4 * 145;          // Numérateur constant
+            const b = 0.55 * brix;      // Dénominateur
+            const delta = 1 + (a / b);  // Discriminant
+            const racine = Math.sqrt(delta);
+        
+            const densite = (1 + racine) / 2;
+            return densite;
         }
 
 
