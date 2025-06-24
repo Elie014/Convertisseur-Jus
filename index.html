@@ -1,39 +1,41 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Convertisseur Jus Concentré ↔ Pur Jus</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f2f2f2; }
-    .container { max-width: 600px; margin: auto; background: #fff;
-                 padding: 20px; border-radius: 10px;
-                 box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    h2 { text-align: center; }
-    label { display: block; margin-top: 12px; font-weight: bold; }
-    input, select, button { width: 100%; padding: 10px; margin-top: 5px;
-                            font-size: 1em; box-sizing: border-box; }
-    button { margin-top: 20px; background: #4285f4; color: #fff;
-             border: none; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #357ae8; }
-    .info { margin-top: 25px; padding: 15px; background: #f9f9f9;
-             border-left: 4px solid #4285f4; }
-    .result-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    .result-table th, .result-table td { border: 1px solid #ccc;
-                                         padding: 8px; text-align: center; }
-    .result-table th { background: #e9e9e9; }
+    body { font-family: Arial, sans-serif; margin:0; padding:20px; background:#f2f2f2 }
+    .container { max-width:600px; margin:auto; background:#fff;
+                 padding:20px; border-radius:10px;
+                 box-shadow:0 2px 8px rgba(0,0,0,0.1) }
+    h2 { text-align:center }
+    label { display:block; margin-top:12px; font-weight:bold }
+    input, select, button { width:100%; padding:10px; margin-top:5px;
+                            font-size:1em; box-sizing:border-box }
+    button { margin-top:20px; background:#4285f4; color:#fff;
+             border:none; border-radius:5px; cursor:pointer }
+    button:hover { background:#357ae8 }
+    .info { margin-top:25px; padding:15px; background:#f9f9f9;
+             border-left:4px solid #4285f4 }
+    .result-table { width:100%; border-collapse:collapse; margin-top:15px }
+    .result-table th, .result-table td { border:1px solid #ccc; padding:8px;
+                                         text-align:center }
+    .result-table th { background:#e9e9e9 }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Convertisseur Jus Concentré ↔ Pur Jus</h2>
     <form onsubmit="return false;">
+      <!-- Direction -->
       <label>Direction de conversion :</label>
       <select id="direction" onchange="updateForm()">
         <option value="to_pur">Concentré → Pur Jus</option>
         <option value="to_conc">Pur Jus → Concentré</option>
       </select>
 
+      <!-- Propriétés source et cible -->
       <label id="labelPropSource">Concentré – Propriété :</label>
       <div style="display:flex;gap:10px;">
         <input type="number" id="valPropSource" step="0.001" placeholder="Valeur"/>
@@ -46,6 +48,7 @@
         <select id="unitPropTarget"></select>
       </div>
 
+      <!-- Quantité -->
       <label id="labelQuant">Quantité à convertir :</label>
       <div style="display:flex;gap:10px;">
         <input type="number" id="valQuantity" step="0.01" placeholder="Valeur"/>
@@ -55,6 +58,32 @@
           <option value="kg">Kilogramme</option>
           <option value="qtx">Quintal (100 kg)</option>
           <option value="t">Tonne</option>
+        </select>
+      </div>
+
+      <!-- Prix concentré -->
+      <label>Prix unitaire concentré :</label>
+      <div style="display:flex;gap:10px;">
+        <input type="number" id="valPriceConc" step="0.01" placeholder="Prix (en €)"/>
+        <select id="unitPriceConc">
+          <option value="L">€/L</option>
+          <option value="hL">€/hL</option>
+          <option value="kg">€/kg</option>
+          <option value="qtx">€/qtx</option>
+          <option value="t">€/t</option>
+        </select>
+      </div>
+
+      <!-- Prix pur jus -->
+      <label>Prix unitaire pur jus :</label>
+      <div style="display:flex;gap:10px;">
+        <input type="number" id="valPricePur" step="0.01" placeholder="Prix (en €)"/>
+        <select id="unitPricePur">
+          <option value="L">€/L</option>
+          <option value="hL">€/hL</option>
+          <option value="kg">€/kg</option>
+          <option value="qtx">€/qtx</option>
+          <option value="t">€/t</option>
         </select>
       </div>
 
@@ -73,156 +102,141 @@
   </div>
 
   <script>
-    // Format français (séparateur d'espaces)
-    function formatNumber(val, dec=2) {
-      return val.toLocaleString('fr-FR', {
-        minimumFractionDigits: dec,
-        maximumFractionDigits: dec
-      });
+    // format français
+    function formatNumber(v,d=2){
+      return v.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
     }
 
-    // ─── Relations d’unité ────────────────────────────────────────────────────
-    function densityFromBrix(bx) {
-      // SG = 145 / (145 − 0,55×Bx) 
-      return 145 / (145 - 0.55 * bx);
-    }
-    function brixFromBaume(be) {
-      // °Bx = °Bé / 0,55 
-      return be / 0.55;
-    }
-    function baumeFromBrix(bx) {
-      // °Bé = 0,55 × °Bx 
-      return 0.55 * bx;
-    }
-    function degreeFromDensity(d) {
-      // Degré (g/L) = ((d−1)×2559,27 − 22,22) / 16,83
-      return ((d - 1) * 2559.27 - 22.22) / 16.83;
-    }
-    function densityFromUnit(val, unit) {
-      switch(unit) {
-        case 'Brix':   return densityFromBrix(val);
-        case 'Baumé':  return densityFromBrix(brixFromBaume(val));
-        case 'Densité':return val;
-        case 'Degré':  return densityFromBrix(val); // on considère Degré ≡ °Bx
-      }
-    }
+    // formules
+    function densityFromBrix(bx){ return 145/(145-0.55*bx); }
+    function brixFromBaume(be){ return be/0.55; }
+    function baumeFromBrix(bx){ return 0.55*bx; }
+    function degreeFromDensity(d){ return ((d-1)*2559.27-22.22)/16.83; }
 
-    // ─── Mise à jour des listes déroulantes ──────────────────────────────────
-    function updateForm() {
+    // mise à jour des listes déroulantes
+    function updateForm(){
       const dir = document.getElementById('direction').value;
       const src = document.getElementById('unitPropSource');
       const tgt = document.getElementById('unitPropTarget');
-      src.innerHTML = tgt.innerHTML = '';
-      const base = ['Brix','Degré','Baumé','Densité'];
-      const ext  = ['Coefficient'];
-      if (dir === 'to_pur') {
-        base.forEach(u=> src.add(new Option(u,u)));
-        base.concat(ext).forEach(u=> tgt.add(new Option(u,u)));
-        document.getElementById('labelPropSource').innerText = 'Concentré – Propriété :';
-        document.getElementById('labelPropTarget').innerText = 'Pur Jus – Propriété :';
-        document.getElementById('labelQuant').innerText     = 'Quantité de concentré :';
-      } else {
-        base.forEach(u=> src.add(new Option(u,u)));
-        base.concat(ext).forEach(u=> tgt.add(new Option(u,u)));
-        document.getElementById('labelPropSource').innerText = 'Pur Jus – Propriété :';
-        document.getElementById('labelPropTarget').innerText = 'Concentré – Propriété :';
-        document.getElementById('labelQuant').innerText     = 'Quantité de pur-jus :';
-      }
+      src.innerHTML=tgt.innerHTML='';
+      const base=['Brix','Degré','Baumé','Densité'], ext=['Coefficient'];
+      base.forEach(u=>src.add(new Option(u,u)));
+      (dir==='to_pur'? base.concat(ext): base.concat(ext)).forEach(u=>tgt.add(new Option(u,u)));
+      document.getElementById('labelPropSource').innerText = dir==='to_pur'
+        ? 'Concentré – Propriété :' : 'Pur Jus – Propriété :';
+      document.getElementById('labelPropTarget').innerText = dir==='to_pur'
+        ? 'Pur Jus – Propriété :' : 'Concentré – Propriété :';
+      document.getElementById('labelQuant').innerText = dir==='to_pur'
+        ? 'Quantité de concentré :' : 'Quantité de pur-jus :';
     }
 
-    // ─── Fonction principale ─────────────────────────────────────────────────
-    function convertir() {
-      const dir   = document.getElementById('direction').value;
-      const valS  = parseFloat(document.getElementById('valPropSource').value);
-      const unitS = document.getElementById('unitPropSource').value;
-      const valT  = parseFloat(document.getElementById('valPropTarget').value);
-      const unitT = document.getElementById('unitPropTarget').value;
-      const valQ  = parseFloat(document.getElementById('valQuantity').value);
-      const unitQ = document.getElementById('unitQuantity').value;
+    function convertir(){
+      const dir = document.getElementById('direction').value;
+      const valS=parseFloat(document.getElementById('valPropSource').value),
+            unitS=document.getElementById('unitPropSource').value;
+      const valT=parseFloat(document.getElementById('valPropTarget').value),
+            unitT=document.getElementById('unitPropTarget').value;
+      const valQ=parseFloat(document.getElementById('valQuantity').value),
+            unitQ=document.getElementById('unitQuantity').value;
+      const pC=parseFloat(document.getElementById('valPriceConc').value),
+            upC=document.getElementById('unitPriceConc').value;
+      const pP=parseFloat(document.getElementById('valPricePur').value),
+            upP=document.getElementById('unitPricePur').value;
 
-      // 1) On remonte à °Bx_conc et °Bx_pur
-      let bxC, bxP, coeff;
-      if (dir === 'to_pur') {
-        bxC = (unitS==='Brix'? valS : unitS==='Baumé'? brixFromBaume(valS) : valS);
-        if (unitT==='Coefficient') {
-          coeff = valT;
-          bxP   = bxC / coeff;
-        } else {
-          bxP   = (unitT==='Brix'? valT : unitT==='Baumé'? brixFromBaume(valT) : valT);
-          coeff = bxC / bxP;
-        }
+      // 1) °Bx concentré et purjus + coeff
+      let bxC,bxP,coeff;
+      if(dir==='to_pur'){
+        bxC = unitS==='Brix'?valS:unitS==='Baumé'?brixFromBaume(valS):valS;
+        if(unitT==='Coefficient'){ coeff=valT; bxP=bxC/coeff; }
+        else { bxP=unitT==='Brix'?valT:unitT==='Baumé'?brixFromBaume(valT):valT; coeff=bxC/bxP; }
       } else {
-        bxP = (unitS==='Brix'? valS : unitS==='Baumé'? brixFromBaume(valS) : valS);
-        if (unitT==='Coefficient') {
-          coeff = valT;
-          bxC    = bxP * coeff;
-        } else {
-          bxC    = (unitT==='Brix'? valT : unitT==='Baumé'? brixFromBaume(valT) : valT);
-          coeff  = bxC / bxP;
-        }
+        bxP = unitS==='Brix'?valS:unitS==='Baumé'?brixFromBaume(valS):valS;
+        if(unitT==='Coefficient'){ coeff=valT; bxC=bxP*coeff; }
+        else { bxC=unitT==='Brix'?valT:unitT==='Baumé'?brixFromBaume(valT):valT; coeff=bxC/bxP; }
       }
 
-      // 2) Densité et masse volumique du concentré
-      const densC = densityFromBrix(bxC);
-      const mvC   = densC / 1.0018; // kg/L
+      // 2) densité & mv concentré
+      const dC=densityFromBrix(bxC), mvC=dC/1.0018;
 
-      // 3) Quantité ramenée en t de concentré ou hL de pur-jus
-      let massC_t=0, volP_hl=0;
-      if (dir==='to_pur') {
+      // 3) quantités normalisées
+      let mC_t=0, vP_hl=0;
+      if(dir==='to_pur'){
         switch(unitQ){
-          case 't':  massC_t = valQ;       break;
-          case 'qtx':massC_t = valQ*0.1;   break;
-          case 'kg': massC_t = valQ/1000;  break;
-          case 'L':  massC_t = valQ*mvC/1000;      break;
-          case 'hL': massC_t = valQ*100*mvC/1000;  break;
+          case't': mC_t=valQ;break;
+          case'qtx':mC_t=valQ*0.1;break;
+          case'kg':mC_t=valQ/1000;break;
+          case'L':mC_t=valQ*mvC/1000;break;
+          case'hL':mC_t=valQ*100*mvC/1000;break;
         }
-        volP_hl = massC_t * coeff * 10;
+        vP_hl=mC_t*coeff*10;
       } else {
         let q_hl;
         switch(unitQ){
-          case 'hL': q_hl = valQ;     break;
-          case 'L':  q_hl = valQ/100; break;
-          case 't':  q_hl = valQ*1000/mvC/100;    break;
-          case 'qtx':q_hl = valQ*100/mvC/100;     break;
-          case 'kg': q_hl = valQ/mvC/100;         break;
+          case'hL':q_hl=valQ;break;
+          case'L':q_hl=valQ/100;break;
+          case't':q_hl=valQ*1000/mvC/100;break;
+          case'qtx':q_hl=valQ*100/mvC/100;break;
+          case'kg':q_hl=valQ/mvC/100;break;
         }
-        volP_hl  = q_hl;
-        massC_t  = volP_hl * mvC /10 /coeff;
+        vP_hl=q_hl; mC_t=vP_hl*mvC/10/coeff;
       }
+      const mP_t=vP_hl*mvC/10, vC_hl=mC_t*10/mvC;
 
-      // 4) Masse et volume du pur-jus
-      const massP_t = volP_hl * mvC / 10;
-      const volC_hl = massC_t * 10 / mvC;
+      // 4) calcul des coûts
+      function qtyFor(priceUnit, isConc){
+        let qty=0;
+        if(isConc){
+          switch(priceUnit){
+            case't': qty=mC_t;break;
+            case'qtx':qty=mC_t*10;break;
+            case'kg':qty=mC_t*1000;break;
+            case'hL':qty=vC_hl;break;
+            case'L':qty=vC_hl*100;break;
+          }
+        } else {
+          switch(priceUnit){
+            case't': qty=mP_t;break;
+            case'qtx':qty=mP_t*10;break;
+            case'kg':qty=mP_t*1000;break;
+            case'hL':qty=vP_hl;break;
+            case'L':qty=vP_hl*100;break;
+          }
+        }
+        return qty;
+      }
+      const costC = qtyFor(upC,true)*pC;
+      const costP = qtyFor(upP,false)*pP;
 
-      // 5) Construction du tableau
-      const rows = [
-        ['Brix',      formatNumber(bxC,2),        formatNumber(bxP,2)],
-        ['Degré',     formatNumber(degreeFromDensity(densC),3), formatNumber(degreeFromDensity(densityFromBrix(bxP)),3)],
-        ['°Baumé',    formatNumber(baumeFromBrix(bxC),3),       formatNumber(baumeFromBrix(bxP),3)],
-        ['Densité',   formatNumber(densC,4),       formatNumber(densityFromBrix(bxP),4)],
-        ['Coef.',     formatNumber(coeff,4),       formatNumber(coeff,4)],
-        ['Masse',        // nouvelle cellule consolidée
-         `${formatNumber(massC_t,3)} t / ${formatNumber(massC_t*10,2)} qtx / ${formatNumber(massC_t*1000,0)} kg`,
-         `${formatNumber(massP_t,3)} t / ${formatNumber(massP_t*10,2)} qtx / ${formatNumber(massP_t*1000,0)} kg`
-        ],
-        ['Volume (hL)', formatNumber(volC_hl,2),   formatNumber(volP_hl,2)],
-        ['Volume (L)',  formatNumber(volC_hl*100,0), formatNumber(volP_hl*100,0)]
+      // 5) affichage
+      const rows=[
+        ['Brix', formatNumber(bxC,2), formatNumber(bxP,2)],
+        ['Degré', formatNumber(degreeFromDensity(dC),3),
+                  formatNumber(degreeFromDensity(densityFromBrix(bxP)),3)],
+        ['°Baumé', formatNumber(baumeFromBrix(bxC),3),
+                   formatNumber(baumeFromBrix(bxP),3)],
+        ['Densité', formatNumber(dC,4), formatNumber(densityFromBrix(bxP),4)],
+        ['Coef.', formatNumber(coeff,4), formatNumber(coeff,4)],
+        ['Masse', `${formatNumber(mC_t,3)} t / ${formatNumber(mC_t*10,2)} qtx / ${formatNumber(mC_t*1000,0)} kg`,
+                  `${formatNumber(mP_t,3)} t / ${formatNumber(mP_t*10,2)} qtx / ${formatNumber(mP_t*1000,0)} kg`],
+        ['Volume (hL)', formatNumber(vC_hl,2), formatNumber(vP_hl,2)],
+        ['Volume (L)', formatNumber(vC_hl*100,0), formatNumber(vP_hl*100,0)],
+        ['Coût concentré', `${formatNumber(costC,2)} €`, '–'],
+        ['Coût pur jus', '–', `${formatNumber(costP,2)} €`]
       ];
-
-      const tbody = document.querySelector('#resultTable tbody');
-      tbody.innerHTML = '';
-      rows.forEach(r => {
-        const tr = document.createElement('tr');
-        r.forEach((c,i) => {
-          const cell = document.createElement(i===0?'th':'td');
-          cell.textContent = c;
+      const tbody=document.querySelector('#resultTable tbody');
+      tbody.innerHTML='';
+      rows.forEach(r=>{
+        const tr=document.createElement('tr');
+        r.forEach((c,i)=>{
+          const cell=document.createElement(i===0?'th':'td');
+          cell.textContent=c;
           tr.appendChild(cell);
         });
         tbody.appendChild(tr);
       });
     }
 
-    // Initialisation
+    // initialisation
     updateForm();
   </script>
 </body>
